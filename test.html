@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Session Auth Test - Fixed</title>
+    <title>Session Fix Test</title>
     <style>
         body { font-family: Arial; margin: 40px; }
         .result { padding: 15px; margin: 10px 0; border-radius: 5px; }
@@ -11,15 +11,64 @@
     </style>
 </head>
 <body>
-    <h1>Session Authentication Test - Fixed</h1>
+    <h1>Session Creation Test</h1>
     
-    <button onclick="testSessionAuth()">Test Session Authentication</button>
-    <button onclick="testWithCredentials()">Test with Credentials</button>
-    
+    <button onclick="testLoginAndSession()">Test Login & Session</button>
     <div id="result"></div>
 
     <script>
-        // Function to get CSRF token from cookies
+        async function testLoginAndSession() {
+            try {
+                // Step 1: Login (should now create session)
+                const loginResponse = await fetch('https://esign-admin.signmary.com/api/auth/login/', {
+                    method: 'POST',
+                    credentials: 'include', // This sends and receives cookies
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCSRFToken(),
+                    },
+                    body: JSON.stringify({
+                        username: 'ireg.member18@gmail.com',
+                        password: 'Wirel3$s'
+                    })
+                });
+                
+                const loginData = await loginResponse.json();
+                console.log('Login response:', loginData);
+                
+                // Step 2: Immediately check session
+                const sessionResponse = await fetch('https://esign-admin.signmary.com/api/debug-auth/', {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                const sessionData = await sessionResponse.json();
+                
+                document.getElementById('result').innerHTML = `
+                    <div class="${loginResponse.ok ? 'success' : 'error'}">
+                        <h3>Session Creation Test</h3>
+                        <p><strong>Login Status:</strong> ${loginResponse.ok ? '✅ SUCCESS' : '❌ FAILED'}</p>
+                        <p><strong>JWT Tokens Received:</strong> ${loginData.access ? '✅ YES' : '❌ NO'}</p>
+                        <p><strong>Session Created:</strong> ${sessionData.authenticated ? '✅ YES' : '❌ NO'}</p>
+                        <p><strong>Session Cookie Found:</strong> ${sessionData.cookies_received.sessionid !== 'NOT FOUND' ? '✅ YES' : '❌ NO'}</p>
+                        <p><strong>Session Key:</strong> ${sessionData.session_key || 'None'}</p>
+                        <p><strong>User Authenticated:</strong> ${sessionData.authenticated ? sessionData.user : 'None'}</p>
+                    </div>
+                `;
+                
+            } catch (error) {
+                document.getElementById('result').innerHTML = `
+                    <div class="error">
+                        <h3>Error</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
         function getCSRFToken() {
             const name = 'csrftoken';
             let cookieValue = null;
@@ -35,87 +84,6 @@
             }
             return cookieValue;
         }
-
-        async function testSessionAuth() {
-            try {
-                // ✅ FIXED: Use correct URL - remove double "api"
-                const response = await fetch('https://esign-admin.signmary.com/api/api/debug-auth/', {
-                    method: 'GET',
-                    credentials: 'include', // This sends session cookies
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
-                });
-                
-                const data = await response.json();
-                
-                const result = document.getElementById('result');
-                result.innerHTML = `
-                    <div class="result ${data.authenticated ? 'success' : 'error'}">
-                        <h3>Session Authentication Test</h3>
-                        <pre>${JSON.stringify(data, null, 2)}</pre>
-                        <p><strong>Status:</strong> ${data.authenticated ? '✅ AUTHENTICATED' : '❌ NOT AUTHENTICATED'}</p>
-                        <p><strong>Session Cookie Found:</strong> ${data.cookies_received.sessionid !== 'NOT FOUND' ? '✅ YES' : '❌ NO'}</p>
-                    </div>
-                `;
-                
-            } catch (error) {
-                document.getElementById('result').innerHTML = `
-                    <div class="error">
-                        <h3>Error</h3>
-                        <p>${error.message}</p>
-                    </div>
-                `;
-            }
-        }
-
-        async function testWithCredentials() {
-            try {
-                // ✅ FIXED: Add CSRF token for POST request
-                const loginResponse = await fetch('https://esign-admin.signmary.com/api/auth/login/', {
-                    method: 'POST',
-                    credentials: 'include',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': getCSRFToken(), // ✅ ADD THIS
-                    },
-                    body: JSON.stringify({
-                        username: 'ireg.member18@gmail.com',
-                        password: 'Wirel3$s'
-                    })
-                });
-                
-                const loginData = await loginResponse.json();
-                console.log('Login response:', loginData);
-                
-                const result = document.getElementById('result');
-                result.innerHTML = `
-                    <div class="result ${loginResponse.ok ? 'success' : 'error'}">
-                        <h3>Login Response</h3>
-                        <pre>${JSON.stringify(loginData, null, 2)}</pre>
-                        <p><strong>Status:</strong> ${loginResponse.status} ${loginResponse.statusText}</p>
-                        <p><strong>Success:</strong> ${loginResponse.ok ? '✅ YES' : '❌ NO'}</p>
-                    </div>
-                `;
-                
-                // If login successful, test session auth
-                if (loginResponse.ok) {
-                    setTimeout(testSessionAuth, 1000);
-                }
-                
-            } catch (error) {
-                document.getElementById('result').innerHTML = `
-                    <div class="error">
-                        <h3>Login Error</h3>
-                        <p>${error.message}</p>
-                    </div>
-                `;
-            }
-        }
-
-        // Test if we can get CSRF token first
-        console.log('CSRF Token:', getCSRFToken());
-        console.log('All cookies:', document.cookie);
     </script>
 </body>
 </html>
