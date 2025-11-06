@@ -37,7 +37,7 @@
                 console.log('Login response:', loginData);
                 
                 // Step 2: Immediately check session
-                const sessionResponse = await fetch('https://esign-admin.signmary.com/api/debug-auth/', {
+                const sessionResponse = await fetch('https://esign-admin.signmary.com/api/api/debug-auth/', {
                     method: 'GET',
                     credentials: 'include',
                     headers: {
