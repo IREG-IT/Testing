@@ -66,33 +66,37 @@
 </head>
 <body>
   <header>Welcome to Signmary Embedded Portal</header>
-
   <div class="content">
     <p>Below is the embedded eSign portal (iframe) for document signing.</p>
-
-    <!-- FINAL WORKING IFRAME -->
+    
+    <!-- ENHANCED IFRAME WITH BETTER ATTRIBUTES -->
     <iframe
       src="https://esign.signmary.com"
       title="Signmary eSign Portal"
       loading="lazy"
       sandbox="allow-same-origin allow-scripts allow-forms allow-modals allow-popups allow-top-navigation-by-user-activation"
-      allow="storage-access; payment; clipboard-write; fullscreen; camera; microphone"
+      allow="storage-access; payment; clipboard-write; fullscreen; camera; microphone; autoplay"
+      allowfullscreen
       style="border: none;"
     ></iframe>
 
-    <!-- DEBUG BUTTON (Click after login to verify cookies) -->
-    <button class="debug-btn" onclick="checkCookiesInIframe()">
-      Check Login Status (After Login)
-    </button>
-
+    <!-- DEBUG BUTTONS -->
+    <div style="margin-top: 1rem;">
+      <button class="debug-btn" onclick="checkCookiesInIframe()">
+        Check Login Status
+      </button>
+      <button class="debug-btn" onclick="testLogin()" style="margin-left: 10px;">
+        Test Login
+      </button>
+    </div>
+    
     <p style="margin-top: 1rem; color: #666; font-size: 0.9rem;">
-      Click the button above after logging in to verify cookies are working.
+      Click the buttons above to debug authentication issues.
     </p>
   </div>
-
+  
   <footer>© 2025 Signmary Integration Demo — All rights reserved.</footer>
 
-  <!-- DEBUG SCRIPT: Runs inside the parent page, talks to iframe -->
   <script>
     function checkCookiesInIframe() {
       const iframe = document.querySelector('iframe');
@@ -100,60 +104,49 @@
         alert('Iframe not ready yet. Wait for it to load.');
         return;
       }
-
-      // Send message to iframe to run debug
-      iframe.contentWindow.postMessage({ type: 'DEBUG_COOKIES' }, 'https://esign.signmary.com');
       
-      alert('Check browser DevTools Console (F12) for cookie debug output.');
+      // Send message to iframe to run debug
+      iframe.contentWindow.postMessage({ 
+        type: 'DEBUG_COOKIES',
+        source: 'parent-page' 
+      }, 'https://esign.signmary.com');
+      
+      console.log('Debug request sent to iframe');
+    }
+
+    function testLogin() {
+      const iframe = document.querySelector('iframe');
+      iframe.contentWindow.postMessage({ 
+        type: 'TEST_LOGIN',
+        credentials: { test: true }
+      }, 'https://esign.signmary.com');
     }
 
     // Listen for messages from iframe
     window.addEventListener('message', (event) => {
       if (event.origin !== 'https://esign.signmary.com') return;
       
+      console.log('Message received from iframe:', event.data);
+      
       if (event.data.type === 'DEBUG_RESULT') {
-        console.log('DEBUG COOKIES FROM IFRAME:', event.data);
         const status = event.data.authenticated 
           ? 'SUCCESS: LOGGED IN!' 
           : 'FAILED: NOT LOGGED IN';
         alert(status + '\nCheck console for full details.');
       }
+      
+      if (event.data.type === 'LOGIN_STATUS') {
+        console.log('Login status from iframe:', event.data);
+      }
     });
 
-    // Auto-check when iframe loads (optional)
+    // Auto-check when iframe loads
     document.querySelector('iframe').addEventListener('load', () => {
+      console.log('Iframe loaded successfully');
       setTimeout(() => {
-        console.log('Iframe loaded. You can now click "Check Login Status".');
+        console.log('Iframe ready for authentication');
       }, 2000);
     });
   </script>
-
-  <!-- INJECT THIS SCRIPT INTO YOUR DJANGO APP (esign.signmary.com) -->
-  <!-- Add this <script> in your base.html or login page -->
-  <!--
-  <script>
-    // Listen for debug request from parent
-    window.addEventListener('message', async (event) => {
-      if (event.origin !== 'https://ireg-it.github.io') return;
-      if (event.data.type !== 'DEBUG_COOKIES') return;
-
-      try {
-        const res = await fetch('/api/debug-cookies/', { credentials: 'include' });
-        const data = await res.json();
-        // Send result back to parent
-        window.parent.postMessage({
-          type: 'DEBUG_RESULT',
-          ...data
-        }, 'https://ireg-it.github.io');
-      } catch (err) {
-        window.parent.postMessage({
-          type: 'DEBUG_RESULT',
-          authenticated: false,
-          error: err.message
-        }, 'https://ireg-it.github.io');
-      }
-    });
-  </script>
-  -->
 </body>
 </html>
