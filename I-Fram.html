@@ -56,17 +56,13 @@
   <div class="content">
     <p>Below is the embedded eSign portal (iframe) for document signing.</p>
 
-    <!--  IFRAME – **MUST** have sandbox + allow attributes  -->
+    <!-- FINAL WORKING IFRAME -->
     <iframe
       src="https://esign.signmary.com"
       title="Signmary eSign Portal"
       loading="lazy"
-
-      <!-- 1. sandbox: allow‑same‑origin is REQUIRED for third‑party cookies -->
       sandbox="allow-same-origin allow-scripts allow-forms allow-modals allow-popups allow-top-navigation-by-user-activation"
-
-      <!-- 2. allow: payment fixes the violation, keep camera/mic for KBA -->
-      allow="payment; clipboard-write; fullscreen; camera; microphone"
+      allow="storage-access; payment; clipboard-write; fullscreen; camera; microphone"
     ></iframe>
 
     <p style="margin-top: 2rem;">
