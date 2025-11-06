@@ -3,150 +3,204 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Embedded eSign Portal</title>
+  <title>Signmary Iframe Auth Debug</title>
   <style>
-    body {
-      font-family: "Inter", sans-serif;
-      background: #f9fafb;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    header {
-      width: 100%;
-      background-color: #1e293b;
-      color: #fff;
-      text-align: center;
-      padding: 1.5rem 0;
-      font-size: 1.5rem;
-      font-weight: 600;
-      letter-spacing: 0.5px;
-    }
-    .content {
-      max-width: 900px;
-      width: 100%;
-      padding: 2rem;
-      text-align: center;
-    }
-    iframe {
-      width: 100%;
-      height: 600px;
-      border: 2px solid #e2e8f0;
-      border-radius: 12px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    }
-    .debug-btn {
-      margin-top: 1rem;
-      padding: 10px 20px;
-      font-size: 1rem;
-      background: #1e293b;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-    .debug-btn:hover {
-      background: #334155;
-    }
-    footer {
-      width: 100%;
-      text-align: center;
-      background: #f1f5f9;
-      padding: 1rem;
-      color: #475569;
-      font-size: 0.95rem;
-      margin-top: 2rem;
-    }
-    @media (max-width: 768px) {
-      iframe { height: 500px; }
-    }
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+    .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    .header { background: #1e293b; color: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+    .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 8px; }
+    .btn { background: #3b82f6; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; margin: 5px; }
+    .btn:hover { background: #2563eb; }
+    .btn-success { background: #10b981; }
+    .btn-danger { background: #ef4444; }
+    .result { background: #f8fafc; padding: 15px; border-radius: 5px; margin-top: 10px; border-left: 4px solid #3b82f6; }
+    pre { margin: 0; white-space: pre-wrap; font-size: 14px; }
+    .success { border-left-color: #10b981; background: #f0fdf4; }
+    .error { border-left-color: #ef4444; background: #fef2f2; }
   </style>
 </head>
 <body>
-  <header>Welcome to Signmary Embedded Portal</header>
-  <div class="content">
-    <p>Below is the embedded eSign portal (iframe) for document signing.</p>
-    
-    <!-- ENHANCED IFRAME WITH BETTER ATTRIBUTES -->
-    <iframe
-      src="https://esign.signmary.com"
-      title="Signmary eSign Portal"
-      loading="lazy"
-      sandbox="allow-same-origin allow-scripts allow-forms allow-modals allow-popups allow-top-navigation-by-user-activation"
-      allow="storage-access; payment; clipboard-write; fullscreen; camera; microphone; autoplay"
-      allowfullscreen
-      style="border: none;"
-    ></iframe>
-
-    <!-- DEBUG BUTTONS -->
-    <div style="margin-top: 1rem;">
-      <button class="debug-btn" onclick="checkCookiesInIframe()">
-        Check Login Status
-      </button>
-      <button class="debug-btn" onclick="testLogin()" style="margin-left: 10px;">
-        Test Login
-      </button>
+  <div class="container">
+    <div class="header">
+      <h1>🔧 Signmary Iframe Authentication Debugger</h1>
+      <p>Test iframe authentication and cookie issues</p>
     </div>
-    
-    <p style="margin-top: 1rem; color: #666; font-size: 0.9rem;">
-      Click the buttons above to debug authentication issues.
-    </p>
+
+    <div class="test-section">
+      <h3>1. Test Direct API Call</h3>
+      <p>This tests if cookies are being sent with API requests:</p>
+      <button class="btn" onclick="testDirectAPI()">Test Direct API</button>
+      <button class="btn btn-success" onclick="testWithCredentials()">Test with Credentials</button>
+      <div id="directApiResult" class="result">Click button to test...</div>
+    </div>
+
+    <div class="test-section">
+      <h3>2. Test Iframe Communication</h3>
+      <p>This tests communication with the iframe:</p>
+      <button class="btn" onclick="sendMessageToIframe()">Send Message to Iframe</button>
+      <button class="btn" onclick="checkIframeCookies()">Check Iframe Cookies</button>
+      <div id="iframeResult" class="result">Iframe messages will appear here...</div>
+    </div>
+
+    <div class="test-section">
+      <h3>3. Clear Storage & Cookies</h3>
+      <p>Clear browser storage if needed:</p>
+      <button class="btn" onclick="clearStorage()">Clear Storage</button>
+      <button class="btn btn-danger" onclick="clearCookies()">Clear All Cookies</button>
+      <button class="btn" onclick="reloadPage()">Reload Page</button>
+    </div>
+
+    <div class="test-section">
+      <h3>4. Application Iframe</h3>
+      <iframe
+        id="mainIframe"
+        src="https://esign.signmary.com"
+        width="100%"
+        height="500"
+        style="border: 1px solid #ccc; border-radius: 8px;"
+        sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
+        allow="storage-access; fullscreen"
+      ></iframe>
+    </div>
   </div>
-  
-  <footer>© 2025 Signmary Integration Demo — All rights reserved.</footer>
 
   <script>
-    function checkCookiesInIframe() {
-      const iframe = document.querySelector('iframe');
-      if (!iframe || !iframe.contentWindow) {
-        alert('Iframe not ready yet. Wait for it to load.');
-        return;
-      }
-      
-      // Send message to iframe to run debug
-      iframe.contentWindow.postMessage({ 
-        type: 'DEBUG_COOKIES',
-        source: 'parent-page' 
-      }, 'https://esign.signmary.com');
-      
-      console.log('Debug request sent to iframe');
+    // Update result display
+    function updateResult(elementId, data, isSuccess = true) {
+      const element = document.getElementById(elementId);
+      element.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+      element.className = `result ${isSuccess ? 'success' : 'error'}`;
     }
 
-    function testLogin() {
-      const iframe = document.querySelector('iframe');
-      iframe.contentWindow.postMessage({ 
-        type: 'TEST_LOGIN',
-        credentials: { test: true }
+    // 1. Test Direct API Call
+    async function testDirectAPI() {
+      try {
+        const response = await fetch('https://esign-admin.signmary.com/api/debug-auth/', {
+          method: 'GET',
+          credentials: 'include', // This sends cookies
+        });
+        
+        const data = await response.json();
+        updateResult('directApiResult', {
+          status: response.status,
+          statusText: response.statusText,
+          authenticated: data.authenticated,
+          cookies_received: data.cookies_received,
+          user: data.user
+        }, response.status === 200);
+        
+      } catch (error) {
+        updateResult('directApiResult', {
+          error: error.message,
+          type: 'Network error'
+        }, false);
+      }
+    }
+
+    // Test with different credential modes
+    async function testWithCredentials() {
+      const tests = [
+        { method: 'No credentials', credentials: 'omit' },
+        { method: 'Same-origin credentials', credentials: 'same-origin' },
+        { method: 'Include credentials', credentials: 'include' }
+      ];
+
+      let results = [];
+      
+      for (const test of tests) {
+        try {
+          const response = await fetch('https://esign-admin.signmary.com/api/debug-auth/', {
+            method: 'GET',
+            credentials: test.credentials,
+          });
+          
+          const data = await response.json();
+          results.push({
+            method: test.method,
+            status: response.status,
+            authenticated: data.authenticated,
+            cookies_found: data.cookies_received.sessionid !== 'NOT FOUND'
+          });
+        } catch (error) {
+          results.push({
+            method: test.method,
+            error: error.message
+          });
+        }
+      }
+      
+      updateResult('directApiResult', results, true);
+    }
+
+    // 2. Iframe Communication
+    function sendMessageToIframe() {
+      const iframe = document.getElementById('mainIframe');
+      iframe.contentWindow.postMessage({
+        type: 'DEBUG_REQUEST',
+        action: 'check_auth_status',
+        timestamp: new Date().toISOString()
       }, 'https://esign.signmary.com');
+      
+      updateResult('iframeResult', { message: 'Debug request sent to iframe' });
+    }
+
+    function checkIframeCookies() {
+      const iframe = document.getElementById('mainIframe');
+      iframe.contentWindow.postMessage({
+        type: 'DEBUG_REQUEST', 
+        action: 'check_cookies',
+        timestamp: new Date().toISOString()
+      }, 'https://esign.signmary.com');
+      
+      updateResult('iframeResult', { message: 'Cookie check request sent to iframe' });
+    }
+
+    // 3. Clear Storage
+    function clearStorage() {
+      localStorage.clear();
+      sessionStorage.clear();
+      updateResult('iframeResult', { message: '✅ Local and session storage cleared' });
+    }
+
+    function clearCookies() {
+      // Clear all cookies
+      document.cookie.split(";").forEach(function(c) {
+        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/;domain=.signmary.com");
+      });
+      updateResult('iframeResult', { message: '✅ All cookies cleared. Please refresh the page.' });
+    }
+
+    function reloadPage() {
+      location.reload();
     }
 
     // Listen for messages from iframe
     window.addEventListener('message', (event) => {
-      if (event.origin !== 'https://esign.signmary.com') return;
-      
-      console.log('Message received from iframe:', event.data);
-      
-      if (event.data.type === 'DEBUG_RESULT') {
-        const status = event.data.authenticated 
-          ? 'SUCCESS: LOGGED IN!' 
-          : 'FAILED: NOT LOGGED IN';
-        alert(status + '\nCheck console for full details.');
+      if (event.origin !== 'https://esign.signmary.com') {
+        console.log('Ignored message from:', event.origin);
+        return;
       }
       
-      if (event.data.type === 'LOGIN_STATUS') {
-        console.log('Login status from iframe:', event.data);
-      }
+      updateResult('iframeResult', {
+        message: 'Received from iframe',
+        data: event.data,
+        origin: event.origin
+      });
     });
 
-    // Auto-check when iframe loads
-    document.querySelector('iframe').addEventListener('load', () => {
-      console.log('Iframe loaded successfully');
+    // Auto-test when iframe loads
+    document.getElementById('mainIframe').addEventListener('load', function() {
+      updateResult('iframeResult', { message: 'Iframe loaded successfully' });
+      
+      // Auto-test after 2 seconds
       setTimeout(() => {
-        console.log('Iframe ready for authentication');
+        updateResult('iframeResult', { message: 'Auto-testing direct API...' });
+        testDirectAPI();
       }, 2000);
     });
+
+    // Initial page info
+    console.log('Debug page loaded. Parent domain:', window.location.hostname);
   </script>
 </body>
 </html>
